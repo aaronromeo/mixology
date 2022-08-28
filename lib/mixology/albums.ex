@@ -8,7 +8,8 @@ defmodule Mixology.Albums do
   end
 
   def list_items() do
-    query = Album
+    query =
+      Album
       |> order_by(:id)
 
     Repo.all(query)

@@ -7,7 +7,7 @@ defmodule Mixology.Application do
 
   @impl true
   def start(_type, _args) do
-    Dotenv.load
+    Dotenv.load()
     Mix.Task.run("loadconfig")
 
     children = [
