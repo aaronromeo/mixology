@@ -18,6 +18,7 @@ defmodule MixologyWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+    get "/oauth_redirect", RedirectController, :index
   end
 
   # Other scopes may use custom stacks.

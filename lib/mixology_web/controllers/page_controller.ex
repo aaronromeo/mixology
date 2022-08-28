@@ -2,6 +2,8 @@ defmodule MixologyWeb.PageController do
   use MixologyWeb, :controller
 
   def index(conn, _params) do
-    render(conn, "index.html")
+    conn
+    |> redirect(external: Mixology.Services.DeezerService.connect_uri())
+    |> Plug.Conn.halt()
   end
 end
