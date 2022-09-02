@@ -38,7 +38,7 @@ defmodule Mixology.MixProject do
       {:esbuild, "~> 0.4", runtime: Mix.env() == :dev},
       {:floki, ">= 0.30.0", only: :test},
       {:gettext, "~> 0.18"},
-      {:httpotion, "~> 3.1.0"},
+      {:hackney, "~> 1.17"},
       {:jason, "~> 1.2"},
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.0"},
@@ -50,7 +50,8 @@ defmodule Mixology.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:swoosh, "~> 1.3"},
       {:telemetry_metrics, "~> 0.6"},
-      {:telemetry_poller, "~> 1.0"}
+      {:telemetry_poller, "~> 1.0"},
+      {:tesla, "~> 1.4"}
     ]
   end
 

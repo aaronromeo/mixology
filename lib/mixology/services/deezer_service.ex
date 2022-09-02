@@ -24,7 +24,7 @@ defmodule Mixology.Services.DeezerService do
       {:error, response} ->
         Logger.error("Error in retrieve_access_token")
         Logger.error(Map.from_struct(response))
-        {:error, %{status_code: response.status_code, body: response.body}}
+        {:error, %{status_code: response.status, body: response.body}}
     end
   end
 
@@ -55,7 +55,7 @@ defmodule Mixology.Services.DeezerService do
     else
       Logger.error("Error in retrieve_favourite_albums")
       Logger.error(Map.from_struct(response))
-      {:error, %{status_code: response.status_code, body: response.body}}
+      {:error, %{status_code: response.status, body: response.body}}
     end
   end
 
@@ -67,7 +67,7 @@ defmodule Mixology.Services.DeezerService do
     else
       Logger.error("Error in retrieve_album_details")
       Logger.error(Map.from_struct(response))
-      {:error, %{status_code: response.status_code, body: response.body}}
+      {:error, %{status_code: response.status, body: response.body}}
     end
   end
 
@@ -129,7 +129,7 @@ defmodule Mixology.Services.DeezerService do
     body = Jason.decode!(response.body)
 
     cond do
-      response.headers["content-type"] != "application/json; charset=utf-8" -> false
+      !Enum.member?(response.headers, {"content-type", "application/json; charset=utf-8"}) -> false
       !is_nil(body["error"]) -> false
       true -> true
     end

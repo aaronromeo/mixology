@@ -1,19 +1,21 @@
 defmodule Deezer.Client do
   def get(path, params \\ %{}) do
-    IO.inspect(path)
-    IO.inspect(params)
+    case params do
+      params when params == %{} ->
+        Tesla.get(client(), path)
 
-    response =
-      case params do
-        params when params == %{} ->
-          IO.inspect("In nil params case")
-          HTTPotion.get(path)
+      %{} ->
+        Tesla.get(client(), path, query: params)
+    end
+  end
 
-        %{} ->
-          IO.inspect("In general case")
-          HTTPotion.get(path, query: params)
-      end
+  defp client do
+    middleware = [
+      Tesla.Middleware.EncodeJson
+    ]
 
-    if HTTPotion.Response.success?(response), do: {:ok, response}, else: {:error, response}
+    adapter = {Tesla.Adapter.Hackney, [recv_timeout: 30_000]}
+
+    Tesla.client(middleware, adapter)
   end
 end
