@@ -13,19 +13,18 @@ defmodule Mixology.Services.DeezerService do
     access_token_uri =
       "https://connect.deezer.com/oauth/access_token.php?app_id=#{app_id()}&secret=#{app_secret()}&code=#{code}"
 
-    response = HTTPotion.get(access_token_uri)
-    IO.inspect(response)
+    case Deezer.Client.get(access_token_uri) do
+      {:ok, response} ->
+        response.body
+        |> String.split("&")
+        |> List.first()
+        |> String.split("=")
+        |> List.last()
 
-    if HTTPotion.Response.success?(response) do
-      response.body
-      |> String.split("&")
-      |> List.first()
-      |> String.split("=")
-      |> List.last()
-    else
-      Logger.error("Error in retrieve_access_token")
-      Logger.error(Map.from_struct(response))
-      {:error, %{status_code: response.status_code, body: response.body}}
+      {:error, response} ->
+        Logger.error("Error in retrieve_access_token")
+        Logger.error(Map.from_struct(response))
+        {:error, %{status_code: response.status_code, body: response.body}}
     end
   end
 
@@ -34,16 +33,16 @@ defmodule Mixology.Services.DeezerService do
   end
 
   def retrieve_favourite_albums(access_token, next) do
-    response =
+    {status, response} =
       if is_nil(next) do
-        HTTPotion.get(user_albums_fetch_uri(), query: %{access_token: access_token})
+        Deezer.Client.get(user_albums_fetch_uri(), %{access_token: access_token})
       else
-        HTTPotion.get(next)
+        Deezer.Client.get(next)
       end
 
     # IO.inspect(response)
 
-    if response_valid?(response) do
+    if status == :ok && response_valid?(response) do
       body = Jason.decode!(response.body)
 
       serialize_favourite_album(access_token, body)
@@ -61,10 +60,9 @@ defmodule Mixology.Services.DeezerService do
   end
 
   def retrieve_album_details(access_token, id) do
-    response = HTTPotion.get(albums_fetch_uri(id), query: %{access_token: access_token})
-    # IO.inspect(response)
+    {status, response} = Deezer.Client.get(albums_fetch_uri(id), %{access_token: access_token})
 
-    if response_valid?(response) do
+    if status == :ok && response_valid?(response) do
       {:ok, Jason.decode!(response.body)}
     else
       Logger.error("Error in retrieve_album_details")
@@ -129,8 +127,8 @@ defmodule Mixology.Services.DeezerService do
   defp response_valid?(response) do
     IO.inspect(response)
     body = Jason.decode!(response.body)
+
     cond do
-      !HTTPotion.Response.success?(response) -> false
       response.headers["content-type"] != "application/json; charset=utf-8" -> false
       !is_nil(body["error"]) -> false
       true -> true
