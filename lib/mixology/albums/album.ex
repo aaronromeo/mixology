@@ -6,6 +6,11 @@ defmodule Mixology.Albums.Album do
     field :artist, :string
     field :deezer_uri, :string
     field :title, :string
+    field :explicit_lyrics, :boolean
+    field :cover_art, :string
+    field :track_count, :integer
+    field :duration, :integer
+    field :genres, {:array, :integer}
 
     timestamps()
   end
@@ -13,7 +18,24 @@ defmodule Mixology.Albums.Album do
   @doc false
   def changeset(album, attrs) do
     album
-    |> cast(attrs, [:title, :artist, :deezer_uri])
-    |> validate_required([:title, :artist, :deezer_uri])
+    |> cast(attrs, [
+      :title,
+      :artist,
+      :deezer_uri,
+      :explicit_lyrics,
+      :cover_art,
+      :track_count,
+      :duration,
+      :genres
+    ])
+    |> validate_required([
+      :title,
+      :artist,
+      :deezer_uri,
+      :explicit_lyrics,
+      :track_count,
+      :duration,
+      :genres
+    ])
   end
 end
