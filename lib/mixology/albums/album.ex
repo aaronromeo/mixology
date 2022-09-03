@@ -12,6 +12,8 @@ defmodule Mixology.Albums.Album do
     field :duration, :integer
     field :genres, {:array, :integer}
 
+    many_to_many :users, Mixology.Users.User, join_through: "users_albums"
+
     timestamps()
   end
 

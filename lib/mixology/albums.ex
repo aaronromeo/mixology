@@ -3,17 +3,26 @@ defmodule Mixology.Albums do
   alias Mixology.Repo
   import Ecto.Query
 
-  def get_item(id) do
+  def get_album(id) do
     Repo.get(Album, id)
   end
 
-  def list_items() do
+  def list_albums() do
     query =
       Album
       |> order_by(:id)
 
     Repo.all(query)
   end
+
+  # def list_albums(where_clause) do
+  #   query =
+  #     Album
+  #     |>
+  #     |> order_by(:id)
+
+  #   Repo.all(query)
+  # end
 
   def create_album(attrs) do
     %Album{}

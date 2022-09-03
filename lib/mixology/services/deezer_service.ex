@@ -4,6 +4,7 @@ defmodule Mixology.Services.DeezerService do
   alias Mixology.Genres
   # alias Mixology.Albums.Album
   alias Mixology.Albums
+  alias Mixology.Users
 
   def connect_uri do
     "https://connect.deezer.com/oauth/auth.php?app_id=#{app_id()}&redirect_uri=#{redirect_uri()}&perms=offline_access,basic_access,manage_library"
@@ -73,12 +74,35 @@ defmodule Mixology.Services.DeezerService do
     end
   end
 
+  def save_user(access_token) do
+    {status, response} = Deezer.Client.get(user_fetch_uri(), %{access_token: access_token})
+
+    IO.inspect(response)
+
+    if status == :ok && response_valid?(response) do
+      body = Jason.decode!(response.body)
+
+      attrs = %{
+        name: body["name"],
+        deezer_id: Integer.to_string(body["id"]),
+        access_token: access_token
+      }
+
+      Users.find_or_create_user(attrs)
+    else
+      Logger.error("Error in retrieve_album_details")
+      Logger.error(Map.from_struct(response))
+      {:error, %{status_code: response.status, body: response.body}}
+    end
+  end
+
   defp app_id(), do: System.get_env("DEEZER_APP_ID")
   defp redirect_uri(), do: System.get_env("DEEZER_REDIRECT_URI")
   defp app_secret(), do: System.get_env("DEEZER_APP_SECRET")
 
   defp albums_fetch_uri(album_id), do: "https://api.deezer.com/album/#{album_id}"
   defp user_albums_fetch_uri, do: "https://api.deezer.com/user/me/albums"
+  defp user_fetch_uri, do: "https://api.deezer.com/user/me"
 
   defp serialize_favourite_album(album_summary, album_details \\ %{}) do
     artist = get_in(album_summary, ["artist", "name"])
