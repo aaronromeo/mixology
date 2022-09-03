@@ -45,7 +45,9 @@ defmodule Mixology.Services.DeezerService do
     if status == :ok && response_valid?(response) do
       body = Jason.decode!(response.body)
 
-      serialize_favourite_album(access_token, body)
+      Enum.each(body["data"], fn album_summary ->
+        serialize_favourite_album(album_summary)
+      end)
 
       if !is_nil(body["next"]) do
         {:ok, retrieve_favourite_albums(access_token, body["next"])}
@@ -78,50 +80,39 @@ defmodule Mixology.Services.DeezerService do
   defp albums_fetch_uri(album_id), do: "https://api.deezer.com/album/#{album_id}"
   defp user_albums_fetch_uri, do: "https://api.deezer.com/user/me/albums"
 
-  defp serialize_favourite_album(access_token, favourite_list) do
-    # IO.inspect(favourite_list)
+  defp serialize_favourite_album(album_summary, album_details \\ %{}) do
+    artist = get_in(album_summary, ["artist", "name"])
+    deezer_uri = get_in(album_summary, ["link"])
+    title = get_in(album_summary, ["title"])
 
-    Enum.each(favourite_list["data"], fn album_summary ->
-      # IO.inspect(album_summary)
-      artist = get_in(album_summary, ["artist", "name"])
-      deezer_uri = get_in(album_summary, ["link"])
-      title = get_in(album_summary, ["title"])
-
-      case retrieve_album_details(access_token, album_summary["id"]) do
-        {:ok, album_details} ->
-          genres =
-            if is_nil(get_in(album_details, ["genres", "data"])) do
-              Logger.warn("Unable to find Album data #{album_details})")
-              []
-            else
-              Enum.map(get_in(album_details, ["genres", "data"]), fn gj ->
-                genre_params = %{
-                  name: get_in(gj, ["name"]),
-                  deezer_id: get_in(gj, ["id"])
-                }
-
-                Genres.find_or_create_genre(genre_params).id
-              end)
-            end
-
-          album_params = %{
-            artist: artist,
-            deezer_uri: deezer_uri,
-            title: title,
-            explicit_lyrics: get_in(album_summary, ["explicit_lyrics"]),
-            cover_art: get_in(album_summary, ["cover_big"]),
-            track_count: get_in(album_details, ["nb_tracks"]),
-            duration: get_in(album_details, ["duration"]),
-            genres: genres
+    genres =
+      if is_nil(get_in(album_details, ["genres", "data"])) do
+        Logger.warn("Unable to find Album data)")
+        Logger.warn(album_summary)
+        []
+      else
+        Enum.map(get_in(album_details, ["genres", "data"]), fn gj ->
+          genre_params = %{
+            name: get_in(gj, ["name"]),
+            deezer_id: get_in(gj, ["id"])
           }
 
-          Albums.find_or_create_album(album_params)
-
-        {:error, _ret} ->
-          Logger.warn("Unable to find Album #{artist} #{title} (#{deezer_uri})")
-          nil
+          Genres.find_or_create_genre(genre_params).id
+        end)
       end
-    end)
+
+    album_params = %{
+      artist: artist,
+      deezer_uri: deezer_uri,
+      title: title,
+      explicit_lyrics: get_in(album_summary, ["explicit_lyrics"]),
+      cover_art: get_in(album_summary, ["cover_big"]),
+      track_count: get_in(album_summary, ["nb_tracks"]),
+      duration: if(album_details == %{}, do: 0, else: get_in(album_details, ["duration"])),
+      genres: genres
+    }
+
+    Albums.find_or_create_album(album_params)
   end
 
   defp response_valid?(response) do
@@ -129,9 +120,14 @@ defmodule Mixology.Services.DeezerService do
     body = Jason.decode!(response.body)
 
     cond do
-      !Enum.member?(response.headers, {"content-type", "application/json; charset=utf-8"}) -> false
-      !is_nil(body["error"]) -> false
-      true -> true
+      !Enum.member?(response.headers, {"content-type", "application/json; charset=utf-8"}) ->
+        false
+
+      !is_nil(body["error"]) ->
+        false
+
+      true ->
+        true
     end
   end
 end
