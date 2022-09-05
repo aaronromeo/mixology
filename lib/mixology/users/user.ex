@@ -2,12 +2,15 @@ defmodule Mixology.Users.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Mixology.Albums.Album
+  alias Mixology.UsersAlbums.UserAlbum
+
   schema "users" do
     field :access_token, :string
     field :deezer_id, :string
     field :name, :string
 
-    many_to_many :albums, Mixology.Albums.Album, join_through: "users_albums"
+    many_to_many :albums, Album, join_through: UserAlbum, on_replace: :delete
 
     timestamps()
   end

@@ -7,6 +7,9 @@ defmodule Mixology.Repo.Migrations.CreateUsersAlbums do
       add :album_id, references(:albums)
     end
 
+    create(index(:users_albums, [:album_id]))
+    create(index(:users_albums, [:user_id]))
+
     create unique_index(:users_albums, [:user_id, :album_id])
   end
 end

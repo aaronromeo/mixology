@@ -1,10 +1,13 @@
 defmodule Mixology.Users do
   alias Mixology.Users.User
+  # alias Mixology.Albums.Album
+  alias Mixology.UsersAlbums.UserAlbum
+
   alias Mixology.Repo
   import Ecto.Query
 
   def get_deezer_user(deezer_id) do
-    query = from u in User, where: u.deezer_id == ^deezer_id
+    query = from u in User, where: u.deezer_id == ^deezer_id, preload: :albums
 
     Repo.one(query)
   end
@@ -29,5 +32,18 @@ defmodule Mixology.Users do
     else
       instance
     end
+  end
+
+  def disassociation_albums_to_user(user) do
+    Repo.delete_all(from ua in UserAlbum, where: ua.user_id == ^user.id)
+  end
+
+  def association_album_to_user(user, album) do
+    IO.inspect(user)
+    IO.inspect(album)
+
+    %UserAlbum{}
+    |> UserAlbum.changeset(%{album_id: album.id, user_id: user.id})
+    |> Repo.insert()
   end
 end

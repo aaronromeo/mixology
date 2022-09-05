@@ -29,14 +29,21 @@ defmodule Mixology.Services.DeezerService do
     end
   end
 
-  def retrieve_favourite_albums(access_token) do
-    retrieve_favourite_albums(access_token, nil)
+  def reset_users_associations(user) do
+    Users.disassociation_albums_to_user(user)
+    user
   end
 
-  def retrieve_favourite_albums(access_token, next) do
+  def retrieve_favourite_albums(user)
+      when not is_nil(user.access_token) and not is_nil(user.id) do
+    retrieve_favourite_albums(user, nil)
+  end
+
+  def retrieve_favourite_albums(user, next)
+      when not is_nil(user.access_token) and not is_nil(user.id) do
     {status, response} =
       if is_nil(next) do
-        Deezer.Client.get(user_albums_fetch_uri(), %{access_token: access_token})
+        Deezer.Client.get(user_albums_fetch_uri(), %{access_token: user.access_token})
       else
         Deezer.Client.get(next)
       end
@@ -47,11 +54,11 @@ defmodule Mixology.Services.DeezerService do
       body = Jason.decode!(response.body)
 
       Enum.each(body["data"], fn album_summary ->
-        serialize_favourite_album(album_summary)
+        upsert_favourite_album(user, album_summary)
       end)
 
-      if !is_nil(body["next"]) do
-        {:ok, retrieve_favourite_albums(access_token, body["next"])}
+      if not is_nil(body["next"]) do
+        {:ok, retrieve_favourite_albums(user, body["next"])}
       else
         {:ok, true}
       end
@@ -62,8 +69,10 @@ defmodule Mixology.Services.DeezerService do
     end
   end
 
-  def retrieve_album_details(access_token, id) do
-    {status, response} = Deezer.Client.get(albums_fetch_uri(id), %{access_token: access_token})
+  def retrieve_album_details(user, id)
+      when not is_nil(user.access_token) and not is_nil(user.id) do
+    {status, response} =
+      Deezer.Client.get(albums_fetch_uri(id), %{access_token: user.access_token})
 
     if status == :ok && response_valid?(response) do
       {:ok, Jason.decode!(response.body)}
@@ -104,7 +113,7 @@ defmodule Mixology.Services.DeezerService do
   defp user_albums_fetch_uri, do: "https://api.deezer.com/user/me/albums"
   defp user_fetch_uri, do: "https://api.deezer.com/user/me"
 
-  defp serialize_favourite_album(album_summary, album_details \\ %{}) do
+  defp upsert_favourite_album(user, album_summary, album_details \\ %{}) do
     artist = get_in(album_summary, ["artist", "name"])
     deezer_uri = get_in(album_summary, ["link"])
     title = get_in(album_summary, ["title"])
@@ -136,7 +145,10 @@ defmodule Mixology.Services.DeezerService do
       genres: genres
     }
 
-    Albums.find_or_create_album(album_params)
+    album = Albums.find_or_create_album(album_params)
+    IO.inspect(Users.association_album_to_user(user, album))
+
+    album
   end
 
   defp response_valid?(response) do
@@ -147,7 +159,7 @@ defmodule Mixology.Services.DeezerService do
       !Enum.member?(response.headers, {"content-type", "application/json; charset=utf-8"}) ->
         false
 
-      !is_nil(body["error"]) ->
+      not is_nil(body["error"]) ->
         false
 
       true ->

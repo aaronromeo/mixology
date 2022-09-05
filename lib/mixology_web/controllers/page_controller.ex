@@ -7,18 +7,18 @@ defmodule MixologyWeb.PageController do
   def index(conn, _params) do
     user = Users.get_deezer_user("7798694")
 
-    if is_nil(user) || is_nil(user.access_token) do
+    if is_nil(user) or is_nil(user.access_token) do
       conn
       |> redirect(external: Mixology.Services.DeezerService.connect_uri())
     end
 
-    # Mixology.Services.DeezerService.save_user(user.access_token)
-
-    favourites = Mixology.Services.DeezerService.retrieve_favourite_albums(user.access_token)
-
-    # TODO: Save `access_token` to a user
+    {_status, favourites} =
+      user
+      |> Mixology.Services.DeezerService.reset_users_associations()
+      |> Mixology.Services.DeezerService.retrieve_favourite_albums()
 
     Logger.info("Retrieved favourites")
+
     # Logger.info(favourites)
     IO.inspect(favourites)
 

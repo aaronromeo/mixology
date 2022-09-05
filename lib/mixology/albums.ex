@@ -1,5 +1,6 @@
 defmodule Mixology.Albums do
   alias Mixology.Albums.Album
+  alias Mixology.Users.User
   alias Mixology.Repo
   import Ecto.Query
 
@@ -34,7 +35,7 @@ defmodule Mixology.Albums do
     album =
       if !is_nil(attrs[:deezer_uri]) do
         attr_uri = attrs[:deezer_uri]
-        query = from a in Album, where: a.deezer_uri == ^attr_uri
+        query = from a in Album, where: a.deezer_uri == ^attr_uri, preload: :users
         Repo.one(query)
       else
         %Album{}
