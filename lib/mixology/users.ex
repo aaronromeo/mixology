@@ -39,11 +39,12 @@ defmodule Mixology.Users do
   end
 
   def association_album_to_user(user, album) do
-    IO.inspect(user)
-    IO.inspect(album)
-
     %UserAlbum{}
     |> UserAlbum.changeset(%{album_id: album.id, user_id: user.id})
     |> Repo.insert()
+  end
+
+  def update_token(user, access_token \\ nil) do
+    Repo.update(user |> Mixology.Users.User.changeset(%{access_token: access_token}))
   end
 end

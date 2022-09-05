@@ -16,11 +16,14 @@ defmodule Mixology.Services.DeezerService do
 
     case Deezer.Client.get(access_token_uri) do
       {:ok, response} ->
-        response.body
-        |> String.split("&")
-        |> List.first()
-        |> String.split("=")
-        |> List.last()
+        access_token =
+          response.body
+          |> String.split("&")
+          |> List.first()
+          |> String.split("=")
+          |> List.last()
+
+        {:ok, access_token}
 
       {:error, response} ->
         Logger.error("Error in retrieve_access_token")
@@ -48,8 +51,6 @@ defmodule Mixology.Services.DeezerService do
         Deezer.Client.get(next)
       end
 
-    # IO.inspect(response)
-
     if status == :ok && response_valid?(response) do
       body = Jason.decode!(response.body)
 
@@ -58,7 +59,7 @@ defmodule Mixology.Services.DeezerService do
       end)
 
       if not is_nil(body["next"]) do
-        {:ok, retrieve_favourite_albums(user, body["next"])}
+        retrieve_favourite_albums(user, body["next"])
       else
         {:ok, true}
       end
@@ -86,8 +87,6 @@ defmodule Mixology.Services.DeezerService do
   def save_user(access_token) do
     {status, response} = Deezer.Client.get(user_fetch_uri(), %{access_token: access_token})
 
-    IO.inspect(response)
-
     if status == :ok && response_valid?(response) do
       body = Jason.decode!(response.body)
 
@@ -97,7 +96,11 @@ defmodule Mixology.Services.DeezerService do
         access_token: access_token
       }
 
-      Users.find_or_create_user(attrs)
+      user =
+        Users.find_or_create_user(attrs)
+        |> Users.update_token(access_token)
+
+      {:ok, user}
     else
       Logger.error("Error in retrieve_album_details")
       Logger.error(Map.from_struct(response))

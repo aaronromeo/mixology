@@ -19,7 +19,7 @@ defmodule Mixology.Users.User do
   def changeset(user, attrs) do
     user
     |> cast(attrs, [:deezer_id, :name, :access_token])
-    |> validate_required([:deezer_id, :name, :access_token])
+    |> validate_required([:deezer_id, :name])
     |> unique_constraint(:deezer_id)
   end
 end
