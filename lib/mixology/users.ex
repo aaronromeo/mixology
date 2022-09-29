@@ -6,6 +6,8 @@ defmodule Mixology.Users do
   alias Mixology.Repo
   import Ecto.Query
 
+  # Repo.one(from u in User, where: not is_nil(u.id), limit: 1, preload: :albums)
+
   def get_deezer_user(deezer_id) do
     query = from u in User, where: u.deezer_id == ^deezer_id, preload: :albums
 

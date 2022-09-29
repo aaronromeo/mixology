@@ -1,6 +1,5 @@
 defmodule Mixology.Albums do
   alias Mixology.Albums.Album
-  alias Mixology.Users.User
   alias Mixology.Repo
   import Ecto.Query
 
@@ -8,22 +7,16 @@ defmodule Mixology.Albums do
     Repo.get(Album, id)
   end
 
-  def list_albums() do
+  def list_users_albums(user) do
     query =
-      Album
-      |> order_by(:id)
+      from a in Album,
+        join: u in assoc(a, :users),
+        preload: [users: u],
+        where: u.id == ^user.id,
+        order_by: a.id
 
     Repo.all(query)
   end
-
-  # def list_albums(where_clause) do
-  #   query =
-  #     Album
-  #     |>
-  #     |> order_by(:id)
-
-  #   Repo.all(query)
-  # end
 
   def create_album(attrs) do
     %Album{}

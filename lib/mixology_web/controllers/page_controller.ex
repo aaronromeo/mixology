@@ -12,15 +12,20 @@ defmodule MixologyWeb.PageController do
       |> redirect(external: Mixology.Services.DeezerService.connect_uri())
     end
 
-    {_status, favourites} =
-      user
-      |> Mixology.Services.DeezerService.reset_users_associations()
-      |> Mixology.Services.DeezerService.retrieve_favourite_albums()
+    # {_status, favourites} =
+    #   user
+    #   |> Mixology.Services.DeezerService.reset_users_associations()
+    #   |> Mixology.Services.DeezerService.retrieve_favourite_albums()
+
+    with {:ok, _user} <- Mixology.Services.DeezerService.reset_users_associations(user),
+         {:ok, _favs} <- Mixology.Services.DeezerService.retrieve_favourite_albums(user),
+         {:ok, _user} <- Mixology.Services.DeezerService.retrieve_album_details(user),
+         do: IO.inspect("wut?")
 
     Logger.info("Retrieved favourites")
 
     # Logger.info(favourites)
-    IO.inspect(favourites)
+    # IO.inspect()
 
     render(conn, "index.html")
   end

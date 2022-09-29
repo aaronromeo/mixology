@@ -34,7 +34,8 @@ defmodule Mixology.Services.DeezerService do
 
   def reset_users_associations(user) do
     Users.disassociation_albums_to_user(user)
-    user
+
+    {:ok, user}
   end
 
   def retrieve_favourite_albums(user)
@@ -61,7 +62,7 @@ defmodule Mixology.Services.DeezerService do
       if not is_nil(body["next"]) do
         retrieve_favourite_albums(user, body["next"])
       else
-        {:ok, true}
+        {:ok, user}
       end
     else
       Logger.error("Error in retrieve_favourite_albums")
@@ -70,18 +71,12 @@ defmodule Mixology.Services.DeezerService do
     end
   end
 
-  def retrieve_album_details(user, id)
+  def retrieve_album_details(user)
       when not is_nil(user.access_token) and not is_nil(user.id) do
-    {status, response} =
-      Deezer.Client.get(albums_fetch_uri(id), %{access_token: user.access_token})
 
-    if status == :ok && response_valid?(response) do
-      {:ok, Jason.decode!(response.body)}
-    else
-      Logger.error("Error in retrieve_album_details")
-      Logger.error(Map.from_struct(response))
-      {:error, %{status_code: response.status, body: response.body}}
-    end
+    retrieve_album_details_helper(user, Albums.list_users_albums(user))
+
+    {:ok, user}
   end
 
   def save_user(access_token) do
@@ -148,14 +143,35 @@ defmodule Mixology.Services.DeezerService do
       genres: genres
     }
 
+    IO.inspect("album_params")
+    IO.inspect(album_params)
     album = Albums.find_or_create_album(album_params)
-    IO.inspect(Users.association_album_to_user(user, album))
+    Users.association_album_to_user(user, album)
 
     album
   end
 
+  defp retrieve_album_details_helper(user, [album | rest]) do
+    # IO.inspect(album)
+    case Deezer.Client.get(albums_fetch_uri(album.id), %{access_token: user.access_token}) do
+      {:error, response} ->
+        Logger.error("Error in retrieve_album_details")
+        Logger.error(Map.from_struct(response))
+        {:error, %{status_code: response.status, body: response.body}}
+      {:ok, response} ->
+        # Need to validate response here
+
+        album_details = Jason.decode!(response.body)
+        IO.inspect(album_details)
+        upsert_favourite_album(user, Map.from_struct(album), album_details)
+        retrieve_album_details_helper(user, rest)
+    end
+  end
+
+  defp retrieve_album_details_helper(_user, []), do: {:ok, true}
+
   defp response_valid?(response) do
-    IO.inspect(response)
+    # IO.inspect(response)
     body = Jason.decode!(response.body)
 
     cond do
