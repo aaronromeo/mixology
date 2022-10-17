@@ -22,8 +22,8 @@ defmodule Mixology.Albums.Album do
     timestamps()
   end
 
-  @required_fields ~w(title artist deezer_id deezer_uri explicit_lyrics track_count duration genres)a
-  @changeset_fields List.flatten(@required_fields, ~w(cover_art detailed_at)a)
+  @required_fields ~w(title artist deezer_id deezer_uri explicit_lyrics track_count)a
+  @changeset_fields List.flatten(@required_fields, ~w(cover_art detailed_at duration genres)a)
 
   @doc false
   def changeset(album, attrs) do

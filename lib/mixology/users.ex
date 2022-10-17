@@ -1,10 +1,10 @@
 defmodule Mixology.Users do
   alias Mixology.Users.User
-  # alias Mixology.Albums.Album
   alias Mixology.UsersAlbums.UserAlbum
 
   alias Mixology.Repo
   import Ecto.Query
+  require Logger
 
   # Repo.one(from u in User, where: not is_nil(u.id), limit: 1, preload: :albums)
 
@@ -44,6 +44,15 @@ defmodule Mixology.Users do
     %UserAlbum{}
     |> UserAlbum.changeset(%{album_id: album.id, user_id: user.id})
     |> Repo.insert()
+  rescue
+    Ecto.ConstraintError ->
+      Logger.warn(["Duplicate Favourite detected ", album.id, user.id])
+
+      {:ok,
+       Repo.one(
+         from ua in UserAlbum,
+           where: ua.album_id == ^album.id and ua.user_id == ^user.id
+       )}
   end
 
   def update_token(user, access_token \\ nil) do

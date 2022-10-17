@@ -2,7 +2,6 @@ defmodule Mixology.Services.DeezerService do
   require Logger
   # alias Mixology.Genres.Genre
   alias Mixology.Genres
-  alias Mixology.Albums.Album
   alias Mixology.Albums
   alias Mixology.Users
 
@@ -59,7 +58,11 @@ defmodule Mixology.Services.DeezerService do
       body = Jason.decode!(response.body)
 
       Enum.each(body["data"], fn album_summary ->
-        upsert_favourite_album_summary(user, album_summary)
+        if !get_in(album_summary, ["available"]) && !get_in(album_summary, ["alternative"]) do
+          Logger.error("Album is not available #{inspect(album_summary, pretty: true)}")
+        else
+          upsert_favourite_album_summary(user, album_summary)
+        end
       end)
 
       if not is_nil(body["next"]) do
@@ -116,8 +119,20 @@ defmodule Mixology.Services.DeezerService do
 
   defp upsert_favourite_album_summary(user, album_summary) do
     artist = get_in(album_summary, ["artist", "name"])
-    deezer_uri = get_in(album_summary, ["link"])
-    deezer_id = get_in(album_summary, ["id"])
+
+    [deezer_uri, deezer_id] =
+      if get_in(album_summary, ["available"]) do
+        [
+          get_in(album_summary, ["link"]),
+          get_in(album_summary, ["id"])
+        ]
+      else
+        [
+          get_in(album_summary, ["alternative", "link"]),
+          get_in(album_summary, ["alternative", "id"])
+        ]
+      end
+
     title = get_in(album_summary, ["title"])
 
     album_params = %{
@@ -181,16 +196,20 @@ defmodule Mixology.Services.DeezerService do
            Deezer.Client.get(albums_fetch_uri(album.deezer_id), %{access_token: user.access_token}),
          {:ok, album_details} <- Jason.decode(response.body) do
       # Need to validate response here
-      Logger.warn("Retrieving album #{album.id}")
+      Logger.debug("Retrieving album #{album.id}")
 
-      if get_in(album_details, ["error", "type"]) |> is_nil do
-        upsert_favourite_album_details(Map.from_struct(album), album_details)
-      else
-        # IO.inspect(album)
-        # IO.inspect(response)
-        # IO.inspect(response.body)
-        error = get_in(album_details, ["error", "type"])
-        Logger.error("Error retrieving album #{error} #{inspect(album)}")
+      cond do
+        get_in(album_details, ["error", "type"]) |> is_nil ->
+          upsert_favourite_album_details(Map.from_struct(album), album_details)
+
+        get_in(album_details, ["error", "type"]) == "DataException" ->
+          Logger.error("Deezer does not have the album details #{inspect(album)}")
+          Albums.delete_album(album.id)
+
+        true ->
+          Logger.error(
+            "Error retrieving album #{get_in(album_details, ["error", "type"])} #{inspect(album)}"
+          )
       end
 
       retrieve_album_details_helper(user, rest)

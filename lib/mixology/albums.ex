@@ -1,5 +1,6 @@
 defmodule Mixology.Albums do
   alias Mixology.Albums.Album
+  alias Mixology.UsersAlbums.UserAlbum
   alias Mixology.Repo
   import Ecto.Query
   require Logger
@@ -48,5 +49,13 @@ defmodule Mixology.Albums do
         Logger.error("Error saving changeset #{inspect(album_changeset)}")
         {:error, album}
     end
+  end
+
+  def delete_album(id) do
+    ua_query = from ua in UserAlbum, where: ua.album_id == ^id
+    Repo.delete_all(ua_query)
+
+    a_query = from a in Album, where: a.id == ^id
+    Repo.delete_all(a_query)
   end
 end
