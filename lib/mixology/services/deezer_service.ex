@@ -2,7 +2,7 @@ defmodule Mixology.Services.DeezerService do
   require Logger
   # alias Mixology.Genres.Genre
   alias Mixology.Genres
-  # alias Mixology.Albums.Album
+  alias Mixology.Albums.Album
   alias Mixology.Albums
   alias Mixology.Users
 
@@ -32,9 +32,12 @@ defmodule Mixology.Services.DeezerService do
     end
   end
 
+  def reset_users_associations(_user = nil) do
+    {:error, nil}
+  end
+
   def reset_users_associations(user) do
     Users.disassociation_albums_to_user(user)
-
     {:ok, user}
   end
 
@@ -56,7 +59,7 @@ defmodule Mixology.Services.DeezerService do
       body = Jason.decode!(response.body)
 
       Enum.each(body["data"], fn album_summary ->
-        upsert_favourite_album(user, album_summary)
+        upsert_favourite_album_summary(user, album_summary)
       end)
 
       if not is_nil(body["next"]) do
@@ -73,8 +76,8 @@ defmodule Mixology.Services.DeezerService do
 
   def retrieve_album_details(user)
       when not is_nil(user.access_token) and not is_nil(user.id) do
-
-    retrieve_album_details_helper(user, Albums.list_users_albums(user))
+    stale_date = NaiveDateTime.add(NaiveDateTime.utc_now(), -30, :day)
+    retrieve_album_details_helper(user, Albums.list_stale_users_albums(user, stale_date))
 
     {:ok, user}
   end
@@ -111,15 +114,36 @@ defmodule Mixology.Services.DeezerService do
   defp user_albums_fetch_uri, do: "https://api.deezer.com/user/me/albums"
   defp user_fetch_uri, do: "https://api.deezer.com/user/me"
 
-  defp upsert_favourite_album(user, album_summary, album_details \\ %{}) do
+  defp upsert_favourite_album_summary(user, album_summary) do
     artist = get_in(album_summary, ["artist", "name"])
     deezer_uri = get_in(album_summary, ["link"])
+    deezer_id = get_in(album_summary, ["id"])
     title = get_in(album_summary, ["title"])
 
+    album_params = %{
+      artist: artist,
+      deezer_uri: deezer_uri,
+      deezer_id: deezer_id,
+      title: title,
+      explicit_lyrics: get_in(album_summary, ["explicit_lyrics"]),
+      cover_art: get_in(album_summary, ["cover_big"]),
+      track_count: get_in(album_summary, ["nb_tracks"])
+    }
+
+    with {:ok, album} <- Albums.find_or_create_album(album_params),
+         {:ok, _ua} <- Users.association_album_to_user(user, album) do
+      {:ok, album}
+    else
+      {:error, data} ->
+        Logger.error("Album summary is not valid - #{inspect(data)}")
+        Logger.error("Album summary is not valid - album_summary - #{inspect(album_summary)}")
+        {:error, data}
+    end
+  end
+
+  defp upsert_favourite_album_details(album_summary, album_details) do
     genres =
       if is_nil(get_in(album_details, ["genres", "data"])) do
-        Logger.warn("Unable to find Album data)")
-        Logger.warn(album_summary)
         []
       else
         Enum.map(get_in(album_details, ["genres", "data"]), fn gj ->
@@ -132,39 +156,53 @@ defmodule Mixology.Services.DeezerService do
         end)
       end
 
-    album_params = %{
-      artist: artist,
-      deezer_uri: deezer_uri,
-      title: title,
-      explicit_lyrics: get_in(album_summary, ["explicit_lyrics"]),
-      cover_art: get_in(album_summary, ["cover_big"]),
-      track_count: get_in(album_summary, ["nb_tracks"]),
-      duration: if(album_details == %{}, do: 0, else: get_in(album_details, ["duration"])),
-      genres: genres
-    }
+    album_params =
+      Map.merge(album_summary, %{
+        duration: if(album_details == %{}, do: 0, else: get_in(album_details, ["duration"])),
+        genres: genres,
+        detailed_at: NaiveDateTime.utc_now()
+      })
 
-    IO.inspect("album_params")
-    IO.inspect(album_params)
-    album = Albums.find_or_create_album(album_params)
-    Users.association_album_to_user(user, album)
-
-    album
+    with {:ok, album} <- Albums.find_or_create_album(album_params) do
+      {:ok, album}
+    else
+      {:error, data} ->
+        Logger.error("Album summary is not valid - #{inspect(data)}")
+        Logger.error("Album summary is not valid - album_summary - #{inspect(album_summary)}")
+        Logger.error("Album details is not valid - album_details - #{inspect(album_details)}")
+        {:error, data}
+    end
   end
 
   defp retrieve_album_details_helper(user, [album | rest]) do
-    # IO.inspect(album)
-    case Deezer.Client.get(albums_fetch_uri(album.id), %{access_token: user.access_token}) do
-      {:error, response} ->
-        Logger.error("Error in retrieve_album_details")
-        Logger.error(Map.from_struct(response))
-        {:error, %{status_code: response.status, body: response.body}}
-      {:ok, response} ->
-        # Need to validate response here
+    # IO.inspect(album, label: "retrieve_album_details_helper album")
 
-        album_details = Jason.decode!(response.body)
-        IO.inspect(album_details)
-        upsert_favourite_album(user, Map.from_struct(album), album_details)
-        retrieve_album_details_helper(user, rest)
+    with {:ok, response} <-
+           Deezer.Client.get(albums_fetch_uri(album.deezer_id), %{access_token: user.access_token}),
+         {:ok, album_details} <- Jason.decode(response.body) do
+      # Need to validate response here
+      Logger.warn("Retrieving album #{album.id}")
+
+      if get_in(album_details, ["error", "type"]) |> is_nil do
+        upsert_favourite_album_details(Map.from_struct(album), album_details)
+      else
+        # IO.inspect(album)
+        # IO.inspect(response)
+        # IO.inspect(response.body)
+        error = get_in(album_details, ["error", "type"])
+        Logger.error("Error retrieving album #{error} #{inspect(album)}")
+      end
+
+      retrieve_album_details_helper(user, rest)
+    else
+      {:error, msg} ->
+        Logger.error("Error in retrieve_album_details")
+        Logger.error(msg)
+
+      # {:error, %{status_code: response.status, body: response.body}}
+      _error ->
+        Logger.error("Error in retrieve_album_details - General error")
+        # {:error, %{status_code: response.status, body: response.body}}
     end
   end
 

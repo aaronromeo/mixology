@@ -15,7 +15,7 @@ defmodule MixologyWeb.RedirectController do
       {:error, msg} ->
         {:error, msg}
 
-      _ ->
+      _error ->
         {:error, "Unable to retrieve access token"}
     end
   end

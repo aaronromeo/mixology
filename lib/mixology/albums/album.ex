@@ -7,12 +7,14 @@ defmodule Mixology.Albums.Album do
 
   schema "albums" do
     field :artist, :string
+    field :deezer_id, :integer
     field :deezer_uri, :string
     field :title, :string
     field :explicit_lyrics, :boolean
     field :cover_art, :string
     field :track_count, :integer
     field :duration, :integer
+    field :detailed_at, :utc_datetime
     field :genres, {:array, :integer}
 
     many_to_many :users, Mixology.Users.User, join_through: UserAlbum, on_replace: :delete
@@ -20,8 +22,8 @@ defmodule Mixology.Albums.Album do
     timestamps()
   end
 
-  @required_fields ~w(title artist deezer_uri explicit_lyrics track_count duration genres)a
-  @changeset_fields List.flatten(@required_fields, ~w(cover_art)a)
+  @required_fields ~w(title artist deezer_id deezer_uri explicit_lyrics track_count duration genres)a
+  @changeset_fields List.flatten(@required_fields, ~w(cover_art detailed_at)a)
 
   @doc false
   def changeset(album, attrs) do
