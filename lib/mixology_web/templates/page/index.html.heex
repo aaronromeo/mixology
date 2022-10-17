@@ -1,41 +1,24 @@
-<section class="phx-hero">
-  <h1><%= gettext "Welcome to %{name}!", name: "Phoenix" %></h1>
-  <p>Peace of mind from prototype to production</p>
+<section class="hero">
+  <h1>Mixology</h1>
+  <p>Album suggestions</p>
 </section>
 
 <section class="row">
   <article class="column">
-    <h2>Resources</h2>
     <ul>
-      <li>
-        <a href="https://hexdocs.pm/phoenix/overview.html">Guides &amp; Docs</a>
-      </li>
-      <li>
-        <a href="https://github.com/phoenixframework/phoenix">Source</a>
-      </li>
-      <li>
-        <a href="https://github.com/phoenixframework/phoenix/blob/v1.6/CHANGELOG.md">v1.6 Changelog</a>
-      </li>
-    </ul>
-  </article>
-  <article class="column">
-    <h2>Help</h2>
-    <ul>
-      <li>
-        <a href="https://elixirforum.com/c/phoenix-forum">Forum</a>
-      </li>
-      <li>
-        <a href="https://web.libera.chat/#elixir">#elixir on Libera Chat (IRC)</a>
-      </li>
-      <li>
-        <a href="https://twitter.com/elixirphoenix">Twitter @elixirphoenix</a>
-      </li>
-      <li>
-        <a href="https://elixir-slackin.herokuapp.com/">Elixir on Slack</a>
-      </li>
-      <li>
-        <a href="https://discord.gg/elixir">Elixir on Discord</a>
-      </li>
+      <%= for album <- @albums do %>
+        <li>
+          <a href={album.deezer_uri}>
+            <div class="card w-96 bg-base-100 shadow-xl">
+              <figure><img src={album.cover_art} alt={album.title} /></figure>
+              <div class="card-body">
+                <h2 class="card-title"><%= album.title %></h2>
+                <p><%= album.artist %></p>
+              </div>
+            </div>
+          </a>
+        </li>
+      <% end %>
     </ul>
   </article>
 </section>

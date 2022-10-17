@@ -31,6 +31,21 @@ defmodule Mixology.Services.DeezerService do
     end
   end
 
+  def get_recommendations(user) do
+    if Users.get_album_count(user) > 0 do
+      # TODO: User should be queued for a refresh
+      {:ok, Users.get_random_albums(user)}
+    else
+      with {:ok, _user} <- reset_users_associations(user),
+           {:ok, _favs} <- retrieve_favourite_albums(user) do
+        {:ok, Users.get_random_albums(user)}
+      else
+        error ->
+          Logger.error(["get_recommendations error", inspect(error, pretty: true)])
+      end
+    end
+  end
+
   def reset_users_associations(_user = nil) do
     {:error, nil}
   end

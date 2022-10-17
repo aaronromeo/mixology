@@ -1,4 +1,5 @@
 defmodule Mixology.Users do
+  alias Mixology.Albums.Album
   alias Mixology.Users.User
   alias Mixology.UsersAlbums.UserAlbum
 
@@ -57,5 +58,21 @@ defmodule Mixology.Users do
 
   def update_token(user, access_token \\ nil) do
     Repo.update(user |> Mixology.Users.User.changeset(%{access_token: access_token}))
+  end
+
+  def get_album_count(user) do
+    Repo.one(from ua in UserAlbum, where: ua.user_id == ^user.id, select: count())
+  end
+
+  def get_random_albums(user) do
+    query =
+      from a in Album,
+        join: ua in UserAlbum,
+        on: a.id == ua.album_id,
+        where: ua.user_id == ^user.id,
+        order_by: fragment("RANDOM()"),
+        limit: 15
+
+    Repo.all(query)
   end
 end

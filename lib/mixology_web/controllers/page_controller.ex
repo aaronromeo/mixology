@@ -8,10 +8,9 @@ defmodule MixologyWeb.PageController do
     with true <- !is_nil(params["user_id"]),
          user <- Users.get_deezer_user(params["user_id"]),
          true <- !is_nil(user) and !is_nil(user.access_token),
-         {:ok, _user} <- DeezerService.reset_users_associations(user),
-         {:ok, _favs} <- DeezerService.retrieve_favourite_albums(user) do
-      Logger.info("Retrieved favourites")
-      render(conn, "index.html")
+         {:ok, albums} <- DeezerService.get_recommendations(user) do
+      Logger.info(["Retrieved favourites", inspect(albums, pretty: true)])
+      render(conn, "index.html", albums: albums)
     else
       error ->
         Logger.error("Error connecting #{inspect(error, pretty: true)}")
