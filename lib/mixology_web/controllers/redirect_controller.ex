@@ -5,8 +5,9 @@ defmodule MixologyWeb.RedirectController do
   def index(conn, params) do
     with {:ok, access_token} <-
            Mixology.Services.DeezerService.retrieve_access_token(params["code"]),
-         {:ok, _user} <- Mixology.Services.DeezerService.save_user(access_token) do
-      page_path = Routes.page_path(conn, :index)
+         {:ok, user} <- Mixology.Services.DeezerService.save_user(access_token) do
+          Logger.warn(inspect(user, pretty: true))
+      page_path = Routes.page_path(conn, :index, user_id: user.deezer_id)
 
       conn
       |> redirect(to: page_path)

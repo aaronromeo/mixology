@@ -97,11 +97,8 @@ defmodule Mixology.Services.DeezerService do
         access_token: access_token
       }
 
-      user =
-        Users.find_or_create_user(attrs)
-        |> Users.update_token(access_token)
-
-      {:ok, user}
+      Users.find_or_create_user(attrs)
+      |> Users.update_token(access_token)
     else
       Logger.error("Error in retrieve_album_details")
       Logger.error(Map.from_struct(response))
