@@ -8,7 +8,7 @@
     <ul>
       <%= for album <- @albums do %>
         <li>
-          <a href={album.deezer_uri}>
+          <a href={deezer_schema_uri(album.deezer_uri)}>
             <div class="card w-96 bg-base-100 shadow-xl">
               <figure><img src={album.cover_art} alt={album.title} /></figure>
               <div class="card-body">

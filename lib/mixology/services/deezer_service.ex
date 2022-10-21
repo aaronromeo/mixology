@@ -202,8 +202,6 @@ defmodule Mixology.Services.DeezerService do
   end
 
   defp retrieve_album_details_helper(user, [album | rest]) do
-    # IO.inspect(album, label: "retrieve_album_details_helper album")
-
     with {:ok, response} <-
            Deezer.Client.get(albums_fetch_uri(album.deezer_id), %{access_token: user.access_token}),
          {:ok, album_details} <- Jason.decode(response.body) do
@@ -240,7 +238,6 @@ defmodule Mixology.Services.DeezerService do
   defp retrieve_album_details_helper(_user, []), do: {:ok, true}
 
   defp response_valid?(response) do
-    # IO.inspect(response)
     body = Jason.decode!(response.body)
 
     cond do
