@@ -17,6 +17,19 @@ config :mixology, MixologyWeb.Endpoint,
   pubsub_server: Mixology.PubSub,
   live_view: [signing_salt: "3pJ6MIyt"]
 
+# Configures Oban
+config :mixology, Oban,
+  repo: Mixology.Repo,
+  plugins: [
+    Oban.Plugins.Pruner,
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"*/5 * * * *", Mixology.Workers.FetchAlbums, max_attempts: 1}
+       #  {"0 0 * * *", Mixology.Workers.FetchAlbums, max_attempts: 1}
+     ]}
+  ],
+  queues: [default: 10]
+
 # Configures the mailer
 #
 # By default it uses the "Local" adapter which stores the emails

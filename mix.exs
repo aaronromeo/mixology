@@ -40,6 +40,7 @@ defmodule Mixology.MixProject do
       {:gettext, "~> 0.18"},
       {:hackney, "~> 1.17"},
       {:jason, "~> 1.2"},
+      {:oban, "~> 2.13"},
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.0"},
       {:phoenix_live_dashboard, "~> 0.6"},

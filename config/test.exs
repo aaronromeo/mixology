@@ -23,6 +23,9 @@ config :mixology, MixologyWeb.Endpoint,
 # In test we don't send emails.
 config :mixology, Mixology.Mailer, adapter: Swoosh.Adapters.Test
 
+# To prevent Oban from running jobs and plugins during test runs, enable :testing mode in test.exs
+config :mixology, Oban, testing: :inline
+
 # Print only warnings and errors during test
 config :logger, level: :warn
 

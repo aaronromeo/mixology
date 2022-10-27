@@ -18,9 +18,10 @@ defmodule Mixology.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Mixology.PubSub},
       # Start the Endpoint (http/https)
-      MixologyWeb.Endpoint
+      MixologyWeb.Endpoint,
       # Start a worker by calling: Mixology.Worker.start_link(arg)
       # {Mixology.Worker, arg}
+      {Oban, Application.fetch_env!(:mixology, Oban)}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
