@@ -21,7 +21,7 @@ config :mixology, MixologyWeb.Endpoint,
 config :mixology, Oban,
   repo: Mixology.Repo,
   plugins: [
-    Oban.Plugins.Pruner,
+    {Oban.Plugins.Pruner, max_age: 300},
     {Oban.Plugins.Cron,
      crontab: [
        {"*/5 * * * *", Mixology.Workers.FetchAlbums, max_attempts: 1}

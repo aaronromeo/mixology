@@ -13,6 +13,7 @@ defmodule Mix.Tasks.Deezer.Retrieve do
   def run(_args) do
     Mix.Task.run("app.start")
 
+    # %{} |> Mixology.Workers.FetchAlbums.new() |> Oban.insert()
     FetchAlbums.perform(%{})
   end
 end
