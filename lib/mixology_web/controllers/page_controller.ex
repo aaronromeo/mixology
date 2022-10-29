@@ -1,5 +1,6 @@
 defmodule MixologyWeb.PageController do
   use MixologyWeb, :controller
+  alias Mixology.Albums
   alias Mixology.Users
   alias Mixology.Services.DeezerService
   require Logger
@@ -9,7 +10,8 @@ defmodule MixologyWeb.PageController do
          user <- Users.get_deezer_user(params["user_id"]),
          true <- !is_nil(user) and !is_nil(user.access_token),
          {:ok, albums} <- DeezerService.get_recommendations(user) do
-      Logger.info(["Retrieved favourites", inspect(albums, pretty: true)])
+      Albums.queue_fetch_albums(user.id)
+
       render(conn, "index.html", albums: albums)
     else
       error ->

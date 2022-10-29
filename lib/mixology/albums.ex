@@ -58,4 +58,8 @@ defmodule Mixology.Albums do
     a_query = from a in Album, where: a.id == ^id
     Repo.delete_all(a_query)
   end
+
+  def queue_fetch_albums(user_id) do
+    %{user_id: user_id} |> Mixology.Workers.FetchAlbums.new() |> Oban.insert()
+  end
 end
