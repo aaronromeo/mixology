@@ -1,5 +1,11 @@
 <div class="container mx-auto w-full max-w-none">
-  <h1>Album Suggestions</h1>
+  <div class="hero bg-base-200">
+    <div class="hero-content text-center">
+      <div class="max-w-md">
+        <h1 class="text-5xl" style="font-family: 'Bruno Ace SC', cursive">Album Suggestions</h1>
+      </div>
+    </div>
+  </div>
 
   <div class="carousel carousel-center max-w-none p-4 space-x-4 bg-neutral rounded-box">
     <%= for album <- @albums do %>
