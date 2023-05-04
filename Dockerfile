@@ -53,6 +53,7 @@ COPY lib lib
 COPY assets assets
 
 # compile assets
+RUN npm --prefix ./assets ci --progress=false --no-audit --loglevel=error
 RUN mix assets.deploy
 
 # Compile the release
