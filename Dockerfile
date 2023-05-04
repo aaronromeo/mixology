@@ -52,6 +52,8 @@ COPY lib lib
 
 COPY assets assets
 
+RUN apt-get update -y && apt-get install -y npm
+
 # compile assets
 RUN npm --prefix ./assets ci --progress=false --no-audit --loglevel=error
 RUN mix assets.deploy

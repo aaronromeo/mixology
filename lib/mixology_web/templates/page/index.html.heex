@@ -1,24 +1,13 @@
-<section class="hero">
-  <h1>Mixology</h1>
-  <p>Album suggestions</p>
-</section>
+<div class="container mx-auto w-full max-w-none">
+  <h1>Album Suggestions</h1>
 
-<section class="row">
-  <article class="column">
-    <ul>
-      <%= for album <- @albums do %>
-        <li>
+  <div class="carousel carousel-center max-w-none p-4 space-x-4 bg-neutral rounded-box">
+    <%= for album <- @albums do %>
+      <div class="carousel-item">
           <a href={deezer_schema_uri(album.deezer_uri)}>
-            <div class="card w-96 bg-base-100 shadow-xl">
-              <figure><img src={album.cover_art} alt={album.title} /></figure>
-              <div class="card-body">
-                <h2 class="card-title"><%= album.title %></h2>
-                <p><%= album.artist %></p>
-              </div>
-            </div>
+            <figure><img src={album.cover_art} alt={album.title} /></figure>
           </a>
-        </li>
-      <% end %>
-    </ul>
-  </article>
-</section>
+      </div>
+    <% end %>
+  </div>
+</div>
