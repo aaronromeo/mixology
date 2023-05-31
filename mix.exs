@@ -8,6 +8,9 @@ defmodule Mixology.MixProject do
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: Mix.compilers(),
+      preferred_cli_env: [
+        vcr: :test, "vcr.delete": :test, "vcr.check": :test, "vcr.show": :test
+      ],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps()
@@ -36,6 +39,7 @@ defmodule Mixology.MixProject do
       {:dotenv, "~> 3.0.0"},
       {:ecto_sql, "~> 3.6"},
       {:esbuild, "~> 0.4", runtime: Mix.env() == :dev},
+      {:exvcr, "~> 0.11", only: :test},
       {:floki, ">= 0.30.0", only: :test},
       {:gettext, "~> 0.18"},
       {:hackney, "~> 1.17"},
